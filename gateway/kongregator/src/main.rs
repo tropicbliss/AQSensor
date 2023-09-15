@@ -19,6 +19,7 @@ use std::{
     time::Duration,
 };
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
+use url::Url;
 
 lazy_static! {
     static ref PM02_GAUGE: IntGauge = register_int_gauge!(opts!(
@@ -66,7 +67,8 @@ struct Metrics {
     hum: i64,
     wifi: i64,
     client: Client,
-    alarm_url: String,
+    alarm_url: Url,
+    minimum_co2_ppm: u64,
 }
 
 impl Metrics {
@@ -80,7 +82,8 @@ impl Metrics {
             client: ClientBuilder::new()
                 .timeout(Duration::from_secs(3))
                 .build()?,
-            alarm_url: std::env::var("ALARM_URI")?,
+            alarm_url: Url::parse(&std::env::var("ALARM_URL")?)?,
+            minimum_co2_ppm: std::env::var("MIN_CO2_PPM")?.parse()?,
         })
     }
 }
@@ -159,7 +162,7 @@ async fn air_quality_input(
     metrics.pm25 = payload.pm25;
     metrics.temp = payload.temp;
     metrics.wifi = payload.wifi;
-    if payload.co2 >= 1500 {
+    if payload.co2 as u64 >= metrics.minimum_co2_ppm {
         let client = metrics.client.clone();
         let alarm_url = metrics.alarm_url.clone();
         tokio::spawn(async move {

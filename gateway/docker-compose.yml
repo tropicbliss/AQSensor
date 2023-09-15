@@ -12,6 +12,8 @@ services:
     container_name: kongregator
     environment:
       PORT: 8080
+      ALARM_URL: http://192.168.1.19/alarmon
+      MINIMUM_CO2_PPM: 1500
     ports:
       - "8080:8080"
   prometheus:
