@@ -14,7 +14,7 @@ COPY . .
 RUN cargo build --release --bin kongregator
 
 # We do not need the Rust toolchain to run the binary!
-FROM debian:bullseye-slim AS runtime
+FROM debian:buster-slim AS runtime
 WORKDIR app
 COPY --from=builder /app/target/release/kongregator /usr/local/bin
 ENTRYPOINT ["/usr/local/bin/kongregator"]
