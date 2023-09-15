@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  kongregator:
+    build:
+      context: kongregator
+    restart: always
+    environment:
+      PORT: 8080

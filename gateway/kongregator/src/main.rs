@@ -91,7 +91,8 @@ async fn main() -> Result<()> {
         .route("/input", post(air_quality_input))
         .route("/metrics", get(export_metrics))
         .with_state(state);
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
+    let port = std::env::var("PORT")?;
+    let addr = SocketAddr::from(([0, 0, 0, 0], port.parse()?));
     tracing::debug!("listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
