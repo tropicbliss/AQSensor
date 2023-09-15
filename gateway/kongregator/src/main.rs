@@ -10,11 +10,13 @@ use lazy_static::lazy_static;
 use prometheus::{
     labels, opts, register_gauge, register_int_gauge, Encoder, Gauge, IntGauge, TextEncoder,
 };
+use reqwest::{Client, ClientBuilder};
 use serde::Deserialize;
 use std::{
     fmt::Debug,
     net::SocketAddr,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
 
@@ -63,6 +65,8 @@ struct Metrics {
     temp: f64,
     hum: i64,
     wifi: i64,
+    client: Client,
+    alarm_url: String,
 }
 
 impl Metrics {
@@ -73,6 +77,10 @@ impl Metrics {
             temp: 0.0,
             hum: 0,
             wifi: 0,
+            client: ClientBuilder::new()
+                .timeout(Duration::from_secs(3))
+                .build()?,
+            alarm_url: std::env::var("ALARM_URI")?,
         })
     }
 }
@@ -151,5 +159,12 @@ async fn air_quality_input(
     metrics.pm25 = payload.pm25;
     metrics.temp = payload.temp;
     metrics.wifi = payload.wifi;
+    if payload.co2 >= 1500 {
+        let client = metrics.client.clone();
+        let alarm_url = metrics.alarm_url.clone();
+        tokio::spawn(async move {
+            client.get(alarm_url).send().await.unwrap();
+        });
+    }
     (StatusCode::CREATED, "")
 }
