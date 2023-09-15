@@ -1,9 +1,39 @@
 version: '3.8'
 
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
+
 services:
   kongregator:
     build:
       context: kongregator
     restart: always
+    container_name: kongregator
     environment:
       PORT: 8080
+    ports:
+      - "8080:8080"
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
