@@ -276,7 +276,7 @@ void sendToServer() {
 // Wifi Manager
  void connectToWifi() {
    WiFiManager wifiManager;
-   //WiFi.disconnect(); //to delete previous saved hotspot
+   WiFi.disconnect(); //to delete previous saved hotspot
    String HOTSPOT = "AG-" + String(ESP.getChipId(), HEX);
    updateOLED2("90s to connect", "to Wifi Hotspot", HOTSPOT);
    wifiManager.setTimeout(90);
