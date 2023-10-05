@@ -374,7 +374,7 @@ void sendToServer() {
 
       if(WiFi.status()== WL_CONNECTED){
         Serial.println(payload);
-        String POSTURL = "http://192.168.1.1:8080/input";
+        String POSTURL = "http://192.168.4.1:8080/input";
         Serial.println(POSTURL);
         WiFiClient client;
         HTTPClient http;
