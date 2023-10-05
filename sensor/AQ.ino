@@ -64,9 +64,6 @@ U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 // CONFIGURATION START
 
-//set to the endpoint you would like to use
-String APIROOT = "http://hw.airgradient.com/";
-
 // set to true to switch from Celcius to Fahrenheit
 boolean inF = false;
 
@@ -377,7 +374,7 @@ void sendToServer() {
 
       if(WiFi.status()== WL_CONNECTED){
         Serial.println(payload);
-        String POSTURL = APIROOT + "sensors/airgradient:" + String(ESP.getChipId(), HEX) + "/measures";
+        String POSTURL = "http://192.168.1.1:8080/input";
         Serial.println(POSTURL);
         WiFiClient client;
         HTTPClient http;
