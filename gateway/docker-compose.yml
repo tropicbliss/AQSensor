@@ -12,7 +12,7 @@ services:
     container_name: kongregator
     environment:
       PORT: 8080
-      ALARM_URL: http://192.168.1.19/alarmon
+      ALARM_URL: http://192.168.4.2/alarmon
       MIN_CO2_PPM: 1500
     ports:
       - "8080:8080"
