@@ -10,7 +10,7 @@ use lazy_static::lazy_static;
 use prometheus::{
     labels, opts, register_gauge, register_int_gauge, Encoder, Gauge, IntGauge, TextEncoder,
 };
-use reqwest::{Client, ClientBuilder};
+use reqwest::{Client, ClientBuilder, Url};
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::Debug,
@@ -19,7 +19,6 @@ use std::{
     time::Duration,
 };
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
-use url::Url;
 
 lazy_static! {
     static ref PM02_GAUGE: IntGauge = register_int_gauge!(opts!(
