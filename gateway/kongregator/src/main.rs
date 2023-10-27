@@ -11,7 +11,7 @@ use prometheus::{
     labels, opts, register_gauge, register_int_gauge, Encoder, Gauge, IntGauge, TextEncoder,
 };
 use reqwest::{Client, ClientBuilder};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     fmt::Debug,
     net::SocketAddr,
@@ -101,6 +101,7 @@ async fn main() -> Result<()> {
     let app = Router::new()
         .route("/input", post(air_quality_input))
         .route("/metrics", get(export_metrics))
+        .route("/jsonmetrics", get(metrics_json))
         .with_state(state);
     let port = std::env::var("PORT")?;
     let addr = SocketAddr::from(([0, 0, 0, 0], port.parse()?));
@@ -138,7 +139,19 @@ async fn export_metrics(State(metrics): State<Arc<Mutex<Metrics>>>) -> impl Into
     output
 }
 
-#[derive(Deserialize, Debug)]
+async fn metrics_json(State(metrics): State<Arc<Mutex<Metrics>>>) -> impl IntoResponse {
+    let metrics = metrics.lock().unwrap();
+    let aq_metrics = AirQualityInput {
+        co2: metrics.co2,
+        hum: metrics.hum,
+        pm25: metrics.pm25,
+        temp: metrics.temp,
+        wifi: metrics.wifi,
+    };
+    Json(aq_metrics)
+}
+
+#[derive(Deserialize, Debug, Serialize)]
 struct AirQualityInput {
     wifi: i64,
     #[serde(rename = "rco2")]
