@@ -1,6 +1,6 @@
 use anyhow::Result;
 use axum::{
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
@@ -93,6 +93,7 @@ async fn main() -> Result<()> {
         .route("/input", post(air_quality_input))
         .route("/metrics", get(export_metrics))
         .route("/jsonmetrics", get(metrics_json))
+        .route("/adjustppm/:min", get(change_minimum_co2_ppm))
         .with_state(state);
     let port = std::env::var("PORT")?;
     let addr = SocketAddr::from(([0, 0, 0, 0], port.parse()?));
@@ -118,14 +119,14 @@ fn calculate_heat_index(temp: f64, hum: f64) -> f64 {
 
 async fn export_metrics(State(metrics): State<Arc<Mutex<Metrics>>>) -> impl IntoResponse {
     {
-        let metrics = metrics.lock().unwrap();
-        PM02_GAUGE.set(metrics.input.pm25);
-        RCO2_GAUGE.set(metrics.input.co2);
-        ATMP_GAUGE.set(metrics.input.temp);
-        RHUM_GAUGE.set(metrics.input.hum);
-        let heat_index = calculate_heat_index(metrics.input.temp as f64, metrics.input.hum as f64);
+        let metrics = metrics.lock().unwrap().input.clone();
+        PM02_GAUGE.set(metrics.pm25);
+        RCO2_GAUGE.set(metrics.co2);
+        ATMP_GAUGE.set(metrics.temp);
+        RHUM_GAUGE.set(metrics.hum);
+        let heat_index = calculate_heat_index(metrics.temp as f64, metrics.hum as f64);
         HEAT_INDEX.set(heat_index);
-        WIFI.set(metrics.input.wifi);
+        WIFI.set(metrics.wifi);
     }
     let mut buffer = Vec::new();
     let encoder = TextEncoder::new();
@@ -136,17 +137,26 @@ async fn export_metrics(State(metrics): State<Arc<Mutex<Metrics>>>) -> impl Into
 }
 
 async fn metrics_json(State(metrics): State<Arc<Mutex<Metrics>>>) -> impl IntoResponse {
-    let metrics = metrics.lock().unwrap();
-    let heat_index = calculate_heat_index(metrics.input.temp as f64, metrics.input.hum as f64);
+    let metrics = metrics.lock().unwrap().input.clone();
+    let heat_index = calculate_heat_index(metrics.temp as f64, metrics.hum as f64);
     let output = AirQualityOutput {
-        co2: metrics.input.co2,
+        co2: metrics.co2,
         heat_index,
-        hum: metrics.input.hum,
-        pm25: metrics.input.pm25,
-        temp: metrics.input.temp,
-        wifi: metrics.input.wifi,
+        hum: metrics.hum,
+        pm25: metrics.pm25,
+        temp: metrics.temp,
+        wifi: metrics.wifi,
     };
     Json(output)
+}
+
+async fn change_minimum_co2_ppm(
+    State(metrics): State<Arc<Mutex<Metrics>>>,
+    Path(min_co2): Path<u64>,
+) -> impl IntoResponse {
+    let mut metrics = metrics.lock().unwrap();
+    metrics.minimum_co2_ppm = min_co2;
+    StatusCode::OK
 }
 
 #[derive(Serialize)]
@@ -160,7 +170,7 @@ struct AirQualityOutput {
     heat_index: f64,
 }
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Debug, Default, Clone)]
 struct AirQualityInput {
     wifi: i64,
     #[serde(alias = "rco2")]
@@ -187,5 +197,5 @@ async fn air_quality_input(
             client.get(alarm_url).send().await.unwrap();
         });
     }
-    (StatusCode::CREATED, "")
+    StatusCode::CREATED
 }
