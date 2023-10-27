@@ -38,7 +38,6 @@ async def beep():
 def connect():
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
-    wlan.config(pm = 0xa11140)
     wlan.ifconfig(('192.168.4.2', '255.255.255.0', '0.0.0.0', '0.0.0.0'))
     wlan.connect(SSID, PASSWORD)
     max_wait = 10
