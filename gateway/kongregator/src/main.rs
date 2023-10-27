@@ -119,7 +119,8 @@ fn calculate_heat_index(temp: f64, hum: f64) -> f64 {
 
 async fn export_metrics(State(metrics): State<Arc<Mutex<Metrics>>>) -> impl IntoResponse {
     {
-        let metrics = metrics.lock().unwrap().input.clone();
+        let metrics = metrics.lock().unwrap();
+        let metrics = &metrics.input;
         PM02_GAUGE.set(metrics.pm25);
         RCO2_GAUGE.set(metrics.co2);
         ATMP_GAUGE.set(metrics.temp);
@@ -137,7 +138,8 @@ async fn export_metrics(State(metrics): State<Arc<Mutex<Metrics>>>) -> impl Into
 }
 
 async fn metrics_json(State(metrics): State<Arc<Mutex<Metrics>>>) -> impl IntoResponse {
-    let metrics = metrics.lock().unwrap().input.clone();
+    let metrics = metrics.lock().unwrap();
+    let metrics = &metrics.input;
     let heat_index = calculate_heat_index(metrics.temp as f64, metrics.hum as f64);
     let output = AirQualityOutput {
         co2: metrics.co2,
@@ -171,7 +173,7 @@ struct AirQualityOutput {
     heat_index: f64,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Debug, Default)]
 struct AirQualityInput {
     wifi: i64,
     #[serde(alias = "rco2")]
