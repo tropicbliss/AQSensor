@@ -156,19 +156,20 @@ struct AirQualityOutput {
     pm25: i64,
     temp: f64,
     hum: i64,
+    #[serde(rename(serialize = "heatIndex"))]
     heat_index: f64,
 }
 
 #[derive(Deserialize, Debug, Default)]
 struct AirQualityInput {
     wifi: i64,
-    #[serde(rename = "rco2")]
+    #[serde(alias = "rco2")]
     co2: i64,
-    #[serde(rename = "pm02")]
+    #[serde(alias = "pm02")]
     pm25: i64,
-    #[serde(rename = "atmp")]
+    #[serde(alias = "atmp")]
     temp: f64,
-    #[serde(rename = "rhum")]
+    #[serde(alias = "rhum")]
     hum: i64,
 }
 
