@@ -61,11 +61,7 @@ lazy_static! {
 }
 
 struct Metrics {
-    co2: i64,
-    pm25: i64,
-    temp: f64,
-    hum: i64,
-    wifi: i64,
+    input: AirQualityInput,
     client: Client,
     alarm_url: Url,
     minimum_co2_ppm: u64,
@@ -74,11 +70,7 @@ struct Metrics {
 impl Metrics {
     fn new() -> Result<Self> {
         Ok(Self {
-            co2: 0,
-            pm25: 0,
-            temp: 0.0,
-            hum: 0,
-            wifi: 0,
+            input: Default::default(),
             client: ClientBuilder::new()
                 .timeout(Duration::from_secs(3))
                 .build()?,
@@ -112,24 +104,29 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+fn calculate_heat_index(temp: f64, hum: f64) -> f64 {
+    let heat_index = -8.784_694_755_56
+        + (1.611_394_11 * temp)
+        + (2.338_548_838_89 * hum)
+        + (-0.146_116_05 * temp * hum)
+        + (-0.012_308_094 * temp.powi(2))
+        + (-0.016_424_827_7778 * hum.powi(2))
+        + (2.211_732 * 1e-3 * temp.powi(2) * hum)
+        + (7.2546 * 1e-4 * temp * hum.powi(2))
+        + (-3.582 * 1e-6 * temp.powi(2) * hum.powi(2));
+    heat_index
+}
+
 async fn export_metrics(State(metrics): State<Arc<Mutex<Metrics>>>) -> impl IntoResponse {
     {
         let metrics = metrics.lock().unwrap();
-        PM02_GAUGE.set(metrics.pm25);
-        RCO2_GAUGE.set(metrics.co2);
-        ATMP_GAUGE.set(metrics.temp);
-        RHUM_GAUGE.set(metrics.hum);
-        let heat_index = -8.784_694_755_56
-            + (1.611_394_11 * metrics.temp as f64)
-            + (2.338_548_838_89 * metrics.hum as f64)
-            + (-0.146_116_05 * metrics.temp as f64 * metrics.hum as f64)
-            + (-0.012_308_094 * (metrics.temp as f64).powi(2))
-            + (-0.016_424_827_7778 * (metrics.hum as f64).powi(2))
-            + (2.211_732 * 1e-3 * (metrics.temp as f64).powi(2) * metrics.hum as f64)
-            + (7.2546 * 1e-4 * metrics.temp as f64 * (metrics.hum as f64).powi(2))
-            + (-3.582 * 1e-6 * (metrics.temp as f64).powi(2) * (metrics.hum as f64).powi(2));
+        PM02_GAUGE.set(metrics.input.pm25);
+        RCO2_GAUGE.set(metrics.input.co2);
+        ATMP_GAUGE.set(metrics.input.temp);
+        RHUM_GAUGE.set(metrics.input.hum);
+        let heat_index = calculate_heat_index(metrics.input.temp as f64, metrics.input.hum as f64);
         HEAT_INDEX.set(heat_index);
-        WIFI.set(metrics.wifi);
+        WIFI.set(metrics.input.wifi);
     }
     let mut buffer = Vec::new();
     let encoder = TextEncoder::new();
@@ -141,17 +138,29 @@ async fn export_metrics(State(metrics): State<Arc<Mutex<Metrics>>>) -> impl Into
 
 async fn metrics_json(State(metrics): State<Arc<Mutex<Metrics>>>) -> impl IntoResponse {
     let metrics = metrics.lock().unwrap();
-    let aq_metrics = AirQualityInput {
-        co2: metrics.co2,
-        hum: metrics.hum,
-        pm25: metrics.pm25,
-        temp: metrics.temp,
-        wifi: metrics.wifi,
+    let heat_index = calculate_heat_index(metrics.input.temp as f64, metrics.input.hum as f64);
+    let output = AirQualityOutput {
+        co2: metrics.input.co2,
+        heat_index,
+        hum: metrics.input.hum,
+        pm25: metrics.input.pm25,
+        temp: metrics.input.temp,
+        wifi: metrics.input.wifi,
     };
-    Json(aq_metrics)
+    Json(output)
 }
 
-#[derive(Deserialize, Debug, Serialize)]
+#[derive(Serialize)]
+struct AirQualityOutput {
+    wifi: i64,
+    co2: i64,
+    pm25: i64,
+    temp: f64,
+    hum: i64,
+    heat_index: f64,
+}
+
+#[derive(Deserialize, Debug, Default)]
 struct AirQualityInput {
     wifi: i64,
     #[serde(rename = "rco2")]
@@ -170,12 +179,8 @@ async fn air_quality_input(
 ) -> impl IntoResponse {
     tracing::debug!("{:?}", payload);
     let mut metrics = metrics.lock().unwrap();
-    metrics.co2 = payload.co2;
-    metrics.hum = payload.hum;
-    metrics.pm25 = payload.pm25;
-    metrics.temp = payload.temp;
-    metrics.wifi = payload.wifi;
-    if payload.co2 as u64 >= metrics.minimum_co2_ppm {
+    metrics.input = payload;
+    if metrics.input.co2 as u64 >= metrics.minimum_co2_ppm {
         let client = metrics.client.clone();
         let alarm_url = metrics.alarm_url.clone();
         tokio::spawn(async move {
