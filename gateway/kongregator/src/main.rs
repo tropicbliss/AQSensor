@@ -156,6 +156,7 @@ async fn change_minimum_co2_ppm(
 ) -> impl IntoResponse {
     let mut metrics = metrics.lock().unwrap();
     metrics.minimum_co2_ppm = min_co2;
+    tracing::debug!("set min ppm to {min_co2}");
     StatusCode::OK
 }
 
