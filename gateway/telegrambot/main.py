@@ -59,7 +59,7 @@ def handle_get_air_quality_callback(call):
         chat_id, 'CAACAgUAAxkBAAEKp2hlQgsEFHgE58pTlPAB5Jhrl2ZCTQACjwQAAuMsOFVX5zSuJAutoDME'
     )
     try:
-        air_quality_response = requests.get('http://192.168.4.1/jsonmetrics')
+        air_quality_response = requests.get('http://192.168.4.1:8080/jsonmetrics')
 
         if air_quality_response.status_code == 200:
             air_quality_data = air_quality_response.json()
