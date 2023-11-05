@@ -42,8 +42,7 @@ services:
   telegrambot:
     build:
       context: telegrambot
-      restart: always
-      container_name: telegrambot
-      environment:
-        BOT_TOKEN: <insert telegram token>
-        CO2_THRESHOLD: 1500
+    restart: always
+    environment:
+      BOT_TOKEN: <insert telegram token>
+      CO2_THRESHOLD: 1500
