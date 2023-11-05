@@ -46,3 +46,4 @@ services:
       container_name: telegrambot
       environment:
         BOT_TOKEN: <insert telegram token>
+        CO2_THRESHOLD: 1500

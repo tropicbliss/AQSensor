@@ -1,10 +1,14 @@
 import os
 import requests
 import telebot
+import threading
+import time
 
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+CO2_THRESHOLD = int(os.getenv("CO2_THRESHOLD"))
+
 
 if BOT_TOKEN == None:
     print("Unable to find bot token")
@@ -16,6 +20,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 @bot.message_handler(commands=['start', 'hello'])
 def send_welcome(message):
     # bot.reply_to(message, "Welcome to the Smart Air Quality Monitoring System! How may I help you?")
+    global chat_id
     chat_id = message.chat.id
     bot.send_sticker(
         chat_id, 'CAACAgUAAxkBAAEKjHFlL_ftZ4nEZXUOK80cZuvBgKOSfgACdAUAAqqlOFWjNwZ1q6p0sTAE'
@@ -47,6 +52,7 @@ def handle_get_air_quality_callback(call):
     """
     Handles the execution of the respective functions upon receipt of the callback query Get_AirQuality
     """
+    global chat_id
     chat_id = call.message.chat.id
     global air_quality_data
     bot.send_sticker(
@@ -105,6 +111,7 @@ def handle_on_alarm_callback(call):
     Handles the execution of the respective functions upon receipt of the callback query On_Alarm
     """
     alarm_on_response = requests.get('http://192.168.4.2/alarmon')
+    global chat_id
     chat_id = call.message.chat.id
     if alarm_on_response.status_code == 200:
         bot.send_message(chat_id, "The alarm is now turned on.")
@@ -119,6 +126,7 @@ def handle_off_alarm_callback(call):
     Handles the execution of the respective functions upon receipt of the callback query Off_Alarm
     """
     alarm_off_response = requests.get('http://192.168.4.2/alarmoff')
+    global chat_id
     chat_id = call.message.chat.id
     if alarm_off_response.status_code == 200:
         bot.send_message(chat_id, "The alarm is now turned off.")
@@ -127,10 +135,9 @@ def handle_off_alarm_callback(call):
             chat_id, "Failed to turn off the alarm. Status code: {alarm_on_response.status_code}")
 
 
-bot.callback_query_handler(lambda query: query.data == 'Get_PM')
-
-
+@bot.callback_query_handler(lambda query: query.data == 'Get_PM')
 def handle_get_pm_callback(call):
+    global chat_id
     chat_id = call.message.chat.id
 
     global air_quality_data  # Reuse the previously fetched data
@@ -143,10 +150,9 @@ def handle_get_pm_callback(call):
             chat_id, "Air quality data is not available. Please fetch data first.")
 
 
-bot.callback_query_handler(lambda query: query.data == 'Get_co2')
-
-
+@bot.callback_query_handler(lambda query: query.data == 'Get_co2')
 def handle_get_co2_callback(call):
+    global chat_id
     chat_id = call.message.chat.id
 
     global air_quality_data  # Reuse the previously fetched data
@@ -159,10 +165,9 @@ def handle_get_co2_callback(call):
             chat_id, "Air quality data is not available. Please fetch data first.")
 
 
-bot.callback_query_handler(lambda query: query.data == 'Get_temp')
-
-
+@bot.callback_query_handler(lambda query: query.data == 'Get_temp')
 def handle_get_temp_callback(call):
+    global chat_id
     chat_id = call.message.chat.id
 
     global air_quality_data  # Reuse the previously fetched data
@@ -175,10 +180,9 @@ def handle_get_temp_callback(call):
             chat_id, "Air quality data is not available. Please fetch data first.")
 
 
-bot.callback_query_handler(lambda query: query.data == 'Get_hum')
-
-
+@bot.callback_query_handler(lambda query: query.data == 'Get_hum')
 def handle_get_humidity_callback(call):
+    global chat_id
     chat_id = call.message.chat.id
 
     global air_quality_data  # Reuse the previously fetched data
@@ -191,10 +195,9 @@ def handle_get_humidity_callback(call):
             chat_id, "Air quality data is not available. Please fetch data first.")
 
 
-bot.callback_query_handler(lambda query: query.data == 'Get_HeatIndex')
-
-
+@bot.callback_query_handler(lambda query: query.data == 'Get_HeatIndex')
 def handle_get_heat_index_callback(call):
+    global chat_id
     chat_id = call.message.chat.id
 
     global air_quality_data  # Reuse the previously fetched data
@@ -207,10 +210,9 @@ def handle_get_heat_index_callback(call):
             chat_id, "Air quality data is not available. Please fetch data first.")
 
 
-bot.callback_query_handler(lambda query: query.data == 'Get_wifi')
-
-
+@bot.callback_query_handler(lambda query: query.data == 'Get_wifi')
 def handle_get_wifi_strength_callback(call):
+    global chat_id
     chat_id = call.message.chat.id
 
     global air_quality_data  # Reuse the previously fetched data
@@ -223,4 +225,48 @@ def handle_get_wifi_strength_callback(call):
             chat_id, "Air quality data is not available. Please fetch data first.")
 
 
+def query_data():
+    try:
+        wifi_strength = air_quality_data.get('co2', 'N/A')
+        return wifi_strength
+    except NameError:
+        return None
+
+
+def check_condition(data):
+    return data > 1500
+
+
+def get_chat_id():
+    global chat_id
+    try:
+        return chat_id
+    except NameError:
+        return None
+
+
+def send_alert(chat_id):
+    bot.send_message(chat_id, "Carbon dioxide levels is at dangerous levels!")
+
+
+def data_check_loop():
+    was_dangerous = False
+    while True:
+        data = query_data()
+        chat_id = get_chat_id()
+        is_currently_dangerous = check_condition(data)
+        if data != None and is_currently_dangerous and chat_id != None and not was_dangerous:
+            send_alert(chat_id)
+            was_dangerous = True
+        if not is_currently_dangerous and was_dangerous:
+            was_dangerous = False
+        time.sleep(10)
+
+
+def start_data_check_thread():
+    thread = threading.Thread(target=data_check_loop)
+    thread.start()
+
+
+start_data_check_thread()
 bot.infinity_polling()
