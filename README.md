@@ -2,7 +2,7 @@
 
 ## Architecture
 [Architecture](images/Architecture.png)
-
+<img src="images/Architecture.png" alt="Architecture">
 
 ## Sensor used
 * Particulate Matter Sensor
