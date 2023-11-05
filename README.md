@@ -1,5 +1,10 @@
 # Air Quality Sensor
 
+## Overview
+Sleep is integral to maintaining good health and overall well-being throughout one's lifespan. Our team has found out that the quality of one’s waking hours is influenced to a considerable extent by the events that occur during your slumber.  As such, our team has decided to focus on the environmental factors that can cause one’s sleep quality to deteriorate. We have decided to develop an advanced air quality monitoring system with sensors capable of accurately measuring and monitoring temperature, humidity, carbon dioxide concentration and particulate matter. 
+
+Our solution aims to provide data visualization through a user-friendly web interface while also implementing an alert system to promptly notify users when air quality reaches dangerous levels. In addition, a telgram bot to enable the remote supervision and regulation of diverse environmental measurements. The project seeks to address the need for precise air quality information for various applications, ranging from daily planning to environmental monitoring and safety measures.
+
 ## Architecture
 [Architecture](images/Architecture.png)
 <img src="images/Architecture.png" alt="Architecture">
