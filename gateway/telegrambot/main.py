@@ -254,11 +254,10 @@ def data_check_loop():
     while True:
         data = query_data()
         chat_id = get_chat_id()
-        is_currently_dangerous = check_condition(data)
-        if data != None and is_currently_dangerous and chat_id != None and not was_dangerous:
+        if data != None and check_condition(data) and chat_id != None and not was_dangerous:
             send_alert(chat_id)
             was_dangerous = True
-        if not is_currently_dangerous and was_dangerous:
+        if data != None and check_condition(data) and was_dangerous:
             was_dangerous = False
         time.sleep(10)
 
