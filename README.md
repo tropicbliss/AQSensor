@@ -24,8 +24,14 @@ Our solution aims to provide data visualization through a user-friendly web inte
 
 ## Grafana dashboard
 
-- Highly customisable
-- Data visualised as line charts
+Grafana's customizable dashboards provide a visual representation of the air quality data collected by our system's sensors. This visualization is crucial in making complex data more accessible and understandable. 
+
+* Highly customisable
+    * Grafana's flexibility allows us to tailor the dashboards to the specific requirements of our air quality system.
+* Historical data
+    * The ability to store and analyze historical data is essential for understanding long-term air quality trends and making informed decisions about environmental improvements.
+* Data Analysis
+    * Grafana's data aggregation and historical analysis features are valuable. They allow us to identify trends, patterns, and potential issues over time. This visualization is crucial in making complex data more accessible and understandable, both for project stakeholders and end-users.
 
 ## Telegram Bot
 
