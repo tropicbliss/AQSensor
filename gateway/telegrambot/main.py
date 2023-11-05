@@ -12,33 +12,35 @@ if BOT_TOKEN == None:
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
+
 @bot.message_handler(commands=['start', 'hello'])
 def send_welcome(message):
-    #bot.reply_to(message, "Welcome to the Smart Air Quality Monitoring System! How may I help you?")
+    # bot.reply_to(message, "Welcome to the Smart Air Quality Monitoring System! How may I help you?")
     chat_id = message.chat.id
     bot.send_sticker(
-        chat_id,'CAACAgUAAxkBAAEKjHFlL_ftZ4nEZXUOK80cZuvBgKOSfgACdAUAAqqlOFWjNwZ1q6p0sTAE'
+        chat_id, 'CAACAgUAAxkBAAEKjHFlL_ftZ4nEZXUOK80cZuvBgKOSfgACdAUAAqqlOFWjNwZ1q6p0sTAE'
     )
     buttons = [
         InlineKeyboardButton(
-        text = "Get Air Quality Readings",
-        callback_data = "Get_AirQuality"
-    ),
+            text="Get Air Quality Readings",
+            callback_data="Get_AirQuality"
+        ),
         InlineKeyboardButton(
-        text = "Turn on alarm",
-        callback_data = "On_Alarm"
-    ),
+            text="Turn on alarm",
+            callback_data="On_Alarm"
+        ),
         InlineKeyboardButton(
-        text = "Turn off alarm",
-        callback_data = "Off_Alarm"
-    ),
-    
+            text="Turn off alarm",
+            callback_data="Off_Alarm"
+        ),
+
     ]
     keyboard = InlineKeyboardMarkup()
     for button in buttons:
         keyboard.add(button)
     message_text = f'Welcome to the Smart Air Quality Monitoring System! How may I help you?'
-    bot.send_message(chat_id, message_text, reply_markup = keyboard)
+    bot.send_message(chat_id, message_text, reply_markup=keyboard)
+
 
 @bot.callback_query_handler(lambda query: query.data == 'Get_AirQuality')
 def handle_get_air_quality_callback(call):
@@ -48,7 +50,7 @@ def handle_get_air_quality_callback(call):
     chat_id = call.message.chat.id
     global air_quality_data
     bot.send_sticker(
-        chat_id,'CAACAgUAAxkBAAEKp2hlQgsEFHgE58pTlPAB5Jhrl2ZCTQACjwQAAuMsOFVX5zSuJAutoDME'
+        chat_id, 'CAACAgUAAxkBAAEKp2hlQgsEFHgE58pTlPAB5Jhrl2ZCTQACjwQAAuMsOFVX5zSuJAutoDME'
     )
     try:
         air_quality_response = requests.get('http://192.168.4.1/jsonmetrics')
@@ -57,41 +59,46 @@ def handle_get_air_quality_callback(call):
             air_quality_data = air_quality_response.json()
             buttons = [
                 InlineKeyboardButton(
-                text = "Particulate Matter reading",
-                callback_data = "Get_PM"
-            ),
+                    text="Particulate Matter reading",
+                    callback_data="Get_PM"
+                ),
                 InlineKeyboardButton(
-                text = "Carbon Dioxide reading",
-                callback_data = "Get_co2"
-            ),
+                    text="Carbon Dioxide reading",
+                    callback_data="Get_co2"
+                ),
                 InlineKeyboardButton(
-                text = "Temperature reading",
-                callback_data = "Get_temp"
-            ),
+                    text="Temperature reading",
+                    callback_data="Get_temp"
+                ),
                 InlineKeyboardButton(
-                text = "Humidity reading",
-                callback_data = "Get_hum"
-            ),
+                    text="Humidity reading",
+                    callback_data="Get_hum"
+                ),
                 InlineKeyboardButton(
-                text = "Heat Index",
-                callback_data = "Get_HeatIndex"
-            ),
+                    text="Heat Index",
+                    callback_data="Get_HeatIndex"
+                ),
                 InlineKeyboardButton(
-                text = "Wifi Strength",
-                callback_data = "Get_wifi"
-            ),
-            
+                    text="Wifi Strength",
+                    callback_data="Get_wifi"
+                ),
+
             ]
             keyboard = InlineKeyboardMarkup()
             for button in buttons:
                 keyboard.add(button)
             message_text = f'What air quality readings would you like?'
-            msg = bot.send_message(chat_id, message_text, reply_markup = keyboard)
+            msg = bot.send_message(chat_id, message_text,
+                                   reply_markup=keyboard)
         else:
-            bot.send_message(chat_id, "Failed to fetch air quality data. Status code: {air_quality_response.status_code}")
+            bot.send_message(
+                chat_id, "Failed to fetch air quality data. Status code: {air_quality_response.status_code}")
     except requests.exceptions.RequestException as e:
         # Handle exceptions, such as timeouts
-        bot.send_message(chat_id, "Failed to fetch air quality data. An error occurred.")
+        bot.send_message(
+            chat_id, "Failed to fetch air quality data. An error occurred.")
+
+
 @bot.callback_query_handler(lambda query: query.data == 'On_Alarm')
 def handle_on_alarm_callback(call):
     """
@@ -102,7 +109,9 @@ def handle_on_alarm_callback(call):
     if alarm_on_response.status_code == 200:
         bot.send_message(chat_id, "The alarm is now turned on.")
     else:
-        bot.send_message(chat_id, "Failed to turn on the alarm. Status code: {alarm_on_response.status_code}")
+        bot.send_message(
+            chat_id, "Failed to turn on the alarm. Status code: {alarm_on_response.status_code}")
+
 
 @bot.callback_query_handler(lambda query: query.data == 'Off_Alarm')
 def handle_off_alarm_callback(call):
@@ -114,9 +123,13 @@ def handle_off_alarm_callback(call):
     if alarm_off_response.status_code == 200:
         bot.send_message(chat_id, "The alarm is now turned off.")
     else:
-        bot.send_message(chat_id, "Failed to turn off the alarm. Status code: {alarm_on_response.status_code}")
+        bot.send_message(
+            chat_id, "Failed to turn off the alarm. Status code: {alarm_on_response.status_code}")
+
 
 bot.callback_query_handler(lambda query: query.data == 'Get_PM')
+
+
 def handle_get_pm_callback(call):
     chat_id = call.message.chat.id
 
@@ -126,9 +139,13 @@ def handle_get_pm_callback(call):
         message_text = f'Particular Matter PM2.5 value: {pm_value}'
         bot.send_message(chat_id, message_text)
     else:
-        bot.send_message(chat_id, "Air quality data is not available. Please fetch data first.")
+        bot.send_message(
+            chat_id, "Air quality data is not available. Please fetch data first.")
+
 
 bot.callback_query_handler(lambda query: query.data == 'Get_co2')
+
+
 def handle_get_co2_callback(call):
     chat_id = call.message.chat.id
 
@@ -138,9 +155,13 @@ def handle_get_co2_callback(call):
         message_text = f'Carbon Dixoide value: {co2_value} ppm'
         bot.send_message(chat_id, message_text)
     else:
-        bot.send_message(chat_id, "Air quality data is not available. Please fetch data first.")
+        bot.send_message(
+            chat_id, "Air quality data is not available. Please fetch data first.")
+
 
 bot.callback_query_handler(lambda query: query.data == 'Get_temp')
+
+
 def handle_get_temp_callback(call):
     chat_id = call.message.chat.id
 
@@ -150,9 +171,13 @@ def handle_get_temp_callback(call):
         message_text = f'Temperature value: {temp_value} degree Celsius'
         bot.send_message(chat_id, message_text)
     else:
-        bot.send_message(chat_id, "Air quality data is not available. Please fetch data first.")
+        bot.send_message(
+            chat_id, "Air quality data is not available. Please fetch data first.")
+
 
 bot.callback_query_handler(lambda query: query.data == 'Get_hum')
+
+
 def handle_get_humidity_callback(call):
     chat_id = call.message.chat.id
 
@@ -162,9 +187,13 @@ def handle_get_humidity_callback(call):
         message_text = f'Humidity value: {hum_value} %'
         bot.send_message(chat_id, message_text)
     else:
-        bot.send_message(chat_id, "Air quality data is not available. Please fetch data first.")
+        bot.send_message(
+            chat_id, "Air quality data is not available. Please fetch data first.")
+
 
 bot.callback_query_handler(lambda query: query.data == 'Get_HeatIndex')
+
+
 def handle_get_heat_index_callback(call):
     chat_id = call.message.chat.id
 
@@ -174,10 +203,13 @@ def handle_get_heat_index_callback(call):
         message_text = f'Heat Index value: {heatIndex_value} degree Celsius'
         bot.send_message(chat_id, message_text)
     else:
-        bot.send_message(chat_id, "Air quality data is not available. Please fetch data first.")
+        bot.send_message(
+            chat_id, "Air quality data is not available. Please fetch data first.")
 
 
 bot.callback_query_handler(lambda query: query.data == 'Get_wifi')
+
+
 def handle_get_wifi_strength_callback(call):
     chat_id = call.message.chat.id
 
@@ -187,6 +219,8 @@ def handle_get_wifi_strength_callback(call):
         message_text = f'Wi-Fi Strength: {wifi_strength} dBm'
         bot.send_message(chat_id, message_text)
     else:
-        bot.send_message(chat_id, "Air quality data is not available. Please fetch data first.")
+        bot.send_message(
+            chat_id, "Air quality data is not available. Please fetch data first.")
+
 
 bot.infinity_polling()
