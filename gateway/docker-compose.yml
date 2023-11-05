@@ -39,3 +39,10 @@ services:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+  telegrambot:
+    build:
+      context: telegrambot
+      restart: always
+      container_name: telegrambot
+      environment:
+        BOT_TOKEN: <insert telegram token>
