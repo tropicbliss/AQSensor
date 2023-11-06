@@ -158,7 +158,7 @@ def handle_get_co2_callback(call):
     global air_quality_data  # Reuse the previously fetched data
     if air_quality_data is not None:
         co2_value = air_quality_data.get('co2', 'N/A')
-        message_text = f'Carbon Dixoide value: {co2_value} ppm'
+        message_text = f'Carbon Dioxide value: {co2_value} ppm'
         bot.send_message(chat_id, message_text)
     else:
         bot.send_message(
@@ -250,8 +250,12 @@ def send_alert(chat_id):
 
 
 def data_check_loop():
+    global air_quality_data
     was_dangerous = False
     while True:
+        air_quality_response = requests.get('http://192.168.4.1:8080/jsonmetrics')
+        if air_quality_response.status_code == 200:
+            air_quality_data = air_quality_response.json()
         data = query_data()
         chat_id = get_chat_id()
         if data != None and check_condition(data) and chat_id != None and not was_dangerous:
